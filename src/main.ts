@@ -29,92 +29,106 @@ interface Transaction {
 
         <div class="form-group">
           <label>Transaction Type:</label>
-          <select [(ngModel)]="transaction.transactionType" name="transactionType" required>
+          <select [(ngModel)]="transaction.transactionType" (ngModelChange)="onTransactionTypeChange()" name="transactionType" required>
             <option value="B">B</option>
             <option value="S">S</option>
-             <option value="MI">MI</option>
+            <option value="MI">MI</option>
             <option value="MR">MR</option>
-             <option value="CG">CG</option>
+            <option value="CG">CG</option>
             <option value="CR">CR</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label>Weight (g):</label>
-          <input type="number" [(ngModel)]="transaction.weight" 
-                 (ngModelChange)="calculateNetWeight()" name="weight" required 
-                 step="0.001" min="0">
-        </div>
+        <ng-container *ngIf="!isGoldCashTransaction()">
+          <div class="form-group">
+            <label>Weight (g):</label>
+            <input type="number" [(ngModel)]="transaction.weight" 
+                   (ngModelChange)="calculateNetWeight()" name="weight" required 
+                   step="0.001" min="0">
+          </div>
 
-        <div class="form-group">
-          <label>Purity (%):</label>
-          <input type="number" [(ngModel)]="transaction.purity" 
-                 (ngModelChange)="calculateNetWeight()" name="purity" required
-                 step="0.001" min="0" max="100">
-        </div>
+          <div class="form-group">
+            <label>Purity (%):</label>
+            <input type="number" [(ngModel)]="transaction.purity" 
+                   (ngModelChange)="calculateNetWeight()" name="purity" required
+                   step="0.001" min="0" max="100">
+          </div>
 
-        <div class="form-group">
-          <label>Net Weight (g):</label>
-          <input type="text" [value]="formatNumber(transaction.netWeight)" readonly name="netWeight">
-        </div>
+          <div class="form-group">
+            <label>Net Weight (g):</label>
+            <input type="text" [value]="formatNumber(transaction.netWeight)" readonly name="netWeight">
+          </div>
 
-        <div class="form-group">
-          <label>Rate (per g):</label>
-          <input type="number" [(ngModel)]="transaction.rate" 
-                 (ngModelChange)="calculateAmount()" name="rate" required>
-        </div>
+          <ng-container *ngIf="!isMetalTransaction()">
+            <div class="form-group">
+              <label>Rate (per g):</label>
+              <input type="number" [(ngModel)]="transaction.rate" 
+                     (ngModelChange)="calculateAmount()" name="rate" required>
+            </div>
 
-        <div class="form-group">
-          <label>Amount:</label>
-          <input type="text" [value]="roundedAmount" readonly name="amount">
-        </div>
+            <div class="form-group">
+              <label>Amount:</label>
+              <input type="text" [value]="roundedAmount" readonly name="amount">
+            </div>
+          </ng-container>
+        </ng-container>
 
-        <div class="form-group">
-          <label>Cash:</label>
-          <input type="number" [(ngModel)]="transaction.cash" 
-                 (ngModelChange)="calculateBalance()" name="cash" required>
-        </div>
+        <ng-container *ngIf="showCashFields()">
+          <div class="form-group">
+            <label>Cash:</label>
+            <input type="number" [(ngModel)]="transaction.cash" 
+                   (ngModelChange)="calculateBalance()" name="cash" required>
+          </div>
 
-        <div class="form-group">
-          <label>Balance:</label>
-          <input type="text" [value]="transaction.balance" readonly name="balance">
-        </div>
+          <div class="form-group" *ngIf="!isGoldCashTransaction() && !isMetalTransaction()">
+            <label>Balance:</label>
+            <input type="text" [value]="transaction.balance" readonly name="balance">
+          </div>
+        </ng-container>
 
         <button type="submit">Print Receipt</button>
       </form>
 
-      <div *ngIf="showReceipt" class="print-receipt">
+      <div class="print-only">
         <div class="receipt-copies">
           <!-- First Copy -->
           <div class="receipt-copy">
-            <div class="receipt-content">
-              <p><strong>LN:</strong> {{transaction.ledgerName}}</p>
-              <p><strong>TT:</strong> {{transaction.transactionType}}</p>
+            <p><strong>LN:</strong> {{transaction.ledgerName}}</p>
+            <p><strong>TT:</strong> {{transaction.transactionType}}</p>
+            <ng-container *ngIf="!isGoldCashTransaction()">
               <p><strong>W:</strong> {{formatNumber(transaction.weight)}}g</p>
               <p><strong>P:</strong> {{formatNumber(transaction.purity)}}%</p>
               <p><strong>NW:</strong> {{formatNumber(transaction.netWeight)}}g</p>
-              <p><strong>R:</strong> {{transaction.rate}}/g</p>
-              <p><strong>A:</strong> {{roundedAmount}}</p>
+              <ng-container *ngIf="!isMetalTransaction()">
+                <p><strong>R:</strong> {{transaction.rate}}/g</p>
+                <p><strong>A:</strong> {{roundedAmount}}</p>
+              </ng-container>
+            </ng-container>
+            <ng-container *ngIf="showCashFields()">
               <p><strong>C:</strong> {{transaction.cash}}</p>
-              <p><strong>B:</strong> {{transaction.balance}}</p>
-              <p><strong>D:</strong> {{formatDate()}}</p>
-            </div>
+              <p *ngIf="!isGoldCashTransaction() && !isMetalTransaction()"><strong>B:</strong> {{transaction.balance}}</p>
+            </ng-container>
+            <p><strong>D:</strong> {{formatDate()}}</p>
           </div>
 
           <!-- Second Copy -->
           <div class="receipt-copy">
-           <div class="receipt-content">
-              <p><strong>LN:</strong> {{transaction.ledgerName}}</p>
-              <p><strong>TT:</strong> {{transaction.transactionType}}</p>
+            <p><strong>LN:</strong> {{transaction.ledgerName}}</p>
+            <p><strong>TT:</strong> {{transaction.transactionType}}</p>
+            <ng-container *ngIf="!isGoldCashTransaction()">
               <p><strong>W:</strong> {{formatNumber(transaction.weight)}}g</p>
               <p><strong>P:</strong> {{formatNumber(transaction.purity)}}%</p>
               <p><strong>NW:</strong> {{formatNumber(transaction.netWeight)}}g</p>
-              <p><strong>R:</strong> {{transaction.rate}}/g</p>
-              <p><strong>A:</strong> {{roundedAmount}}</p>
+              <ng-container *ngIf="!isMetalTransaction()">
+                <p><strong>R:</strong> {{transaction.rate}}/g</p>
+                <p><strong>A:</strong> {{roundedAmount}}</p>
+              </ng-container>
+            </ng-container>
+            <ng-container *ngIf="showCashFields()">
               <p><strong>C:</strong> {{transaction.cash}}</p>
-              <p><strong>B:</strong> {{transaction.balance}}</p>
-              <p><strong>D:</strong> {{formatDate()}}</p>
-            </div>
+              <p *ngIf="!isGoldCashTransaction() && !isMetalTransaction()"><strong>B:</strong> {{transaction.balance}}</p>
+            </ng-container>
+            <p><strong>D:</strong> {{formatDate()}}</p>
           </div>
         </div>
       </div>
@@ -122,25 +136,33 @@ interface Transaction {
   `,
   styles: [`
     .receipt {
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 15px;
       font-family: Arial, sans-serif;
+      box-sizing: border-box;
     }
 
     .form-group {
       margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
     }
 
     label {
-      display: inline-block;
-      width: 120px;
-      margin-right: 10px;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
     }
 
     input, select {
-      padding: 5px;
-      width: 200px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
     }
 
     input[readonly] {
@@ -149,12 +171,14 @@ interface Transaction {
     }
 
     button {
-      padding: 10px 20px;
+      width: 100%;
+      padding: 12px;
       background-color: #4CAF50;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      font-size: 16px;
       margin-top: 20px;
     }
 
@@ -162,22 +186,38 @@ interface Transaction {
       background-color: #45a049;
     }
 
-    .print-receipt {
-      margin-top: 30px;
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+    .print-only {
+      display: none;
     }
 
-    .receipt-content {
-      line-height: 1.6;
+    @media (min-width: 768px) {
+      .form-group {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      label {
+        width: 120px;
+        margin-bottom: 0;
+        margin-right: 10px;
+      }
+
+      input, select {
+        flex: 1;
+      }
+
+      button {
+        width: auto;
+        min-width: 200px;
+        margin-left: 130px;
+      }
     }
 
     /* Print-specific styles */
     @media print {
       @page {
-        size: A6 landscape;
-        margin: 5mm;
+        size: #10 envelope;
+        margin: 0;
       }
 
       body {
@@ -192,47 +232,29 @@ interface Transaction {
         max-width: none;
       }
 
-      form, button {
+      form {
         display: none;
       }
 
-      .print-receipt {
-        border: none;
-        padding: 0;
-        margin: 0;
-        page-break-inside: avoid;
+      .print-only {
+        display: block;
+        padding-left: 0.86in;
+        padding-top: 0.30in;
       }
 
       .receipt-copies {
         display: flex;
+        gap: 4mm;
       }
 
       .receipt-copy {
         flex: 1;
+        font-size: 9pt;
+        line-height: 1.6;
       }
 
-      .receipt-copy:first-child {
-        margin-right: 2mm;
-      }
-
-      .receipt-copy:last-child {
-        margin-left: 2mm;
-      }
-
-      h3 {
-        margin: 0 0 3mm 0;
-        font-size: 12pt;
-        text-align: center;
-        border-bottom: 1px solid #000;
-        padding-bottom: 2mm;
-      }
-
-      .receipt-content {
-        font-size: 10pt;
-      }
-
-      .receipt-content p {
-        margin: 2mm 0;
+      .receipt-copy p {
+        margin: 1.5mm 0;
       }
 
       strong {
@@ -254,7 +276,6 @@ export class App {
     balance: 0
   };
 
-  showReceipt = false;
   currentDate = new Date();
 
   formatNumber(value: number): string {
@@ -268,7 +289,9 @@ export class App {
 
   calculateNetWeight() {
     this.transaction.netWeight = Number((this.transaction.weight * this.transaction.purity / 100).toFixed(3));
-    this.calculateAmount();
+    if (!this.isMetalTransaction()) {
+      this.calculateAmount();
+    }
   }
 
   calculateAmount() {
@@ -287,11 +310,36 @@ export class App {
     return `${day.toString().padStart(2, '0')} ${dayName}`;
   }
 
+  isMetalTransaction(): boolean {
+    return this.transaction.transactionType === 'MI' || this.transaction.transactionType === 'MR';
+  }
+
+  isGoldCashTransaction(): boolean {
+    return this.transaction.transactionType === 'CG' || this.transaction.transactionType === 'CR';
+  }
+
+  showCashFields(): boolean {
+    return !this.isMetalTransaction() || this.isGoldCashTransaction();
+  }
+
+  onTransactionTypeChange() {
+    if (this.isGoldCashTransaction()) {
+      this.transaction.weight = 0;
+      this.transaction.purity = 0;
+      this.transaction.netWeight = 0;
+      this.transaction.rate = 0;
+      this.transaction.amount = 0;
+      this.transaction.balance = 0;
+    } else if (this.isMetalTransaction()) {
+      this.transaction.rate = 0;
+      this.transaction.amount = 0;
+      this.transaction.cash = 0;
+      this.transaction.balance = 0;
+    }
+  }
+
   printReceipt() {
-    this.showReceipt = true;
-    setTimeout(() => {
-      window.print();
-    }, 100);
+    window.print();
   }
 }
 
